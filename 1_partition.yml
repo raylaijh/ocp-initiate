@@ -1,0 +1,56 @@
+---
+- name: Setting up usr_local_bin on all nodes
+  hosts: OSEv3
+  tasks:
+    - name: Partition VDB
+      parted:
+        device: /dev/vdb
+        number: 1
+        flags: [ lvm ]
+        state: present
+        part_end: 2.5GiB
+
+    - name: Create VG
+      lvg:
+        vg: rhel2
+        pvs: /dev/vdb1
+        
+    - name: Create LV usr_local_bin
+      lvol:
+        vg: rhel2
+        lv: usr_local_bin
+        size: 1g 
+    
+    - name: Create file systems for LVM
+      filesystem:
+        fstype: xfs
+        dev: /dev/rhel2/usr_local_bin 
+
+    - name: Mount on /usr/local/bin persistently 
+      mount:
+        path: /usr/local/bin
+        src: /dev/rhel2/usr_local_bin
+        fstype: xfs
+        state: mounted
+
+- name: Setting up tmp on worker,infra nodes
+  hosts: nodes
+  tasks:     
+    - name: Create LV tmp
+      lvol:
+        vg: rhel2
+        lv: tmp
+        size: 1g 
+    
+    - name: Create file systems for LVM
+      filesystem:
+        fstype: xfs
+        dev: /dev/rhel2/tmp 
+
+    - name: Mount on /tmp persistently 
+      mount:
+        path: /tmp
+        src: /dev/rhel2/tmp
+        fstype: xfs
+        state: mounted
+              

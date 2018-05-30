@@ -1,0 +1,61 @@
+---
+- name: Config firewall and docker for all nodes
+  hosts: OSEv3 
+  
+  tasks:
+    - name: Set firewall settings
+      command: firewall-cmd --permanent --add-port=4789/udp --add-port=10250/tcp --add-port=53/tcp --add-port=443/tcp
+    
+    - name: Reload firewall 
+      command: firewall-cmd --reload  
+
+    - name: Edit /etc/sysconfig/docker-storage-setup
+      lineinfile:
+        path: /etc/sysconfig/docker-storage-setup
+        state: present
+        line: 'VG=docker-vg'
+    
+    - name: Partition VDB
+      parted:
+        device: /dev/vdb
+        number: 2
+        state: present
+        flags: [ lvm ]
+        part_start: 5242880s
+        
+
+    - name: Create VG
+      lvg:
+        vg: docker-vg
+        pvs: /dev/vdb2
+
+    - name: Replace ovaerlay2 with devicemapper
+      lineinfile:
+        path: /etc/sysconfig/docker-storage-setup
+        regexp: '^STORAGE*'
+        line: 'STORAGE_DRIVER=devicemapper'
+
+#    - name: Set docker config file
+#      blockinfile:
+#        path: /etc/sysconfig/docker-storage-setup
+#        block: |
+#          CONTAINER_BOOT_LV_NAME=docker-lv
+#          CONTAINER_BOOT_LV_SIZE=100%FREE
+#          CONTAINER_BOOT_LV_MOUNT_PATH=/var/lib/docker
+#          VG=docker-vg
+
+    - name: Run docker-storage-setup script
+      command: docker-storage-setup
+
+    - name: Enable and start docker
+      command: systemctl enable docker
+
+    - name: Enable and start docker
+      command: systemctl start docker
+   
+    - name: Forcefully restart dbus to ensure dnsmasq work when running deploy_clusters.yml later
+      command: systemctl start dbus
+      
+      
+
+   

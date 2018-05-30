@@ -1,0 +1,30 @@
+---
+- name: Modify gateway
+  hosts: OSEv3 
+  
+  tasks:
+    - name: Modify gateway 
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0
+        regexp: '^GATEWAY*'
+        line: 'GATEWAY=192.168.122.1'
+    
+#    - name: Add DNS
+#      lineinfile:
+#        path: /etc/sysconfig/network-scripts/ifcfg-eth0       
+#        regexp: 'DNS1=192.168.122.1'
+#        line: 'DNS2=192.168.122.1'
+        
+    - name: Add DNS
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0       
+#        regexp: 'DNS1=192.168.122.1'
+        line: 'DNS1=192.168.122.254'
+    - name: Restart network
+      command: systemctl restart network
+
+   
+      
+      
+
+   

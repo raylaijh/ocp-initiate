@@ -1,0 +1,24 @@
+---
+- name: wipe all partitions on VDB
+  hosts: OSEv3
+  tasks:
+    - name: Wiping VDB1
+      parted:
+        device: /dev/vdb
+        number: 1
+        state: absent
+
+    - name: Remove entries from /etc/fstab
+      mount:
+        path: /usr/local/bin  
+        src: /dev/rhel2/usr_local_bin
+        fstype: xfs
+        state: absent 
+         
+    - name: Remove entries from /etc/fstab
+      mount:
+        path: /tmp  
+        src: /dev/rhel2/tmp
+        fstype: xfs
+        state: absent 
+

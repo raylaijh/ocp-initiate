@@ -1,0 +1,75 @@
+---
+- name: prepare openshift hosts
+  hosts: OSEv3
+  any_errors_fatal: true
+  tasks:
+    - name: Remove machine id
+      file:
+        state: absent
+        path: "/etc/machine-id"
+
+    - name: Generate machine id
+      command: 'dbus-uuidgen --ensure=/etc/machine-id'
+
+    - name: Recreate id to /var/lib/dbus
+      command: 'dbus-uuidgen --ensure'
+
+    - name: Reboot server
+      shell: sleep 2 && shutdown -r now
+      async: 1
+      poll: 0
+
+    - name: Wait for server to come back
+      wait_for: >
+           host={{ inventory_hostname }}
+           port=22
+           delay=15
+           timeout=600
+      delegate_to: localhost
+
+    - name: Clean up subscriptions 
+      command: subscription-manager clean
+
+    - name: Subscription Manager register, pool subscription
+      redhat_subscription:
+        state: present
+        username: <user>
+        password: <passwd>
+        pool_ids:
+          - 8a85f98460bfb0470160c2ff250f3e66
+    
+    - name: Disable all RHSM repos and enable required repos
+      command: 'subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-ose-3.9-rpms --enable=rhel-7-fast-datapath-rpms --enable=rhel-7-server-ansible-2.4-rpms'
+ 
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+      - atomic-openshift-utils
+      - atomic-openshift-node
+      - bash-completion
+      - bind-utils
+      - bridge-utils
+      - git
+      - iptables-services
+      - kexec-tools
+      - net-tools
+      - psacct
+      - sos
+      - iputils
+      - wget
+      - patch
+      - NetworkManager
+      - wget
+      - tmux
+      - telnet
+      - vim
+      - atomic
+      - docker
+      - yum-utils
+
+    - name: yum update
+      yum:
+        name: '*'
+        state: latest

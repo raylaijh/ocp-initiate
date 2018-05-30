@@ -1,0 +1,18 @@
+---
+- name: prepare openshift hosts
+  hosts: OSEv3
+  any_errors_fatal: true
+  tasks:
+    - name: Remove machine id
+      file:
+        state: absent
+        path: "/etc/machine-id"
+
+    - name: Generate machine id
+      command: 'dbus-uuidgen --ensure=/etc/machine-id'
+   
+    - name: Recreate id to /var/lib/dbus
+      command: 'dbus-uuidgen --ensure'
+
+
+
